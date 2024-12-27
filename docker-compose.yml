@@ -1,0 +1,43 @@
+x-build-args: &build-args
+  AUDIVERIS_VERSION: 5.4-alpha-3
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args: *build-args
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args: *build-args
+    volumes:
+      - .:/app/api
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/api
+    working_dir: /app/api
+    entrypoint: []
+    command: python3 -m pytest -v
+    depends_on:
+      - api
