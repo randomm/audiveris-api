@@ -16,6 +16,37 @@ The Audiveris version used in this project is configured in `docker-compose.yml`
 docker compose build
 ```
 
+## Contributing
+
+Contributions are welcome! Whether it's bug reports, feature requests, or code contributions, we appreciate your help in making this project better.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a new branch for your feature or bugfix (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run the tests to ensure everything works (`docker compose run --rm test`)
+5. Commit your changes (`git commit -am 'Add amazing feature'`)
+6. Push to your branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Guidelines
+
+- Follow the existing code style and conventions
+- Add tests for new features
+- Update documentation as needed
+- Keep commits focused and provide clear commit messages
+- Make sure all tests pass before submitting a PR
+- Reference any relevant issues in your PR description
+
+### Bug Reports and Feature Requests
+
+Please use GitHub Issues to report bugs or request features. When reporting bugs:
+- Provide a clear description of the issue
+- Include steps to reproduce the problem
+- Share relevant logs or error messages
+- Mention your environment (OS, Docker version, etc.)
+
 ## Features
 
 - PDF and image file support
