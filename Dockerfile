@@ -46,6 +46,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Configure ImageMagick policy to increase resource limits
+RUN sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml && \
+    sed -i 's/<policy domain="resource" name="memory" value="256MiB"\/>/<policy domain="resource" name="memory" value="2GiB"\/>/g' /etc/ImageMagick-6/policy.xml && \
+    sed -i 's/<policy domain="resource" name="disk" value="1GiB"\/>/<policy domain="resource" name="disk" value="4GiB"\/>/g' /etc/ImageMagick-6/policy.xml
+
 # Copy Audiveris from builder
 COPY --from=builder /opt/audiveris /opt/audiveris
 
@@ -60,16 +65,10 @@ java -Xmx1g -cp "/opt/audiveris/lib/*" Audiveris -batch "$@"' > /usr/local/bin/a
 # Set up Python environment
 WORKDIR /app/api
 
-# Install Python dependencies globally
-COPY requirements.txt pyproject.toml ./
+# Install Python dependencies from requirements.txt
+COPY requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    python3 -m pip install --break-system-packages \
-    pytest \
-    httpx \
-    pytest-asyncio \
-    fastapi \
-    uvicorn \
-    python-multipart
+    python3 -m pip install --break-system-packages -r requirements.txt
 
 # Copy API code and entry script last (changes most frequently)
 COPY . .

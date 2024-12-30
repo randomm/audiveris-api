@@ -55,6 +55,9 @@ Please use GitHub Issues to report bugs or request features. When reporting bugs
 - Docker Compose setup with resource management
 - Cached builds for faster development
 - Comprehensive test suite
+- Concurrent request handling with workspace isolation
+- Real-time progress updates via Server-Sent Events (SSE)
+- File size limits and resource management
 
 ## Prerequisites
 
@@ -85,7 +88,82 @@ curl -X POST -F "file=@your-sheet-music.pdf" \
 - `POST /convert`: Convert uploaded sheet music file to MusicXML
   - Accepts PDF or image files
   - Returns MusicXML file
+  - Handles concurrent requests safely
+  - Enforces file size limits
+- `POST /convert/stream`: Convert with real-time progress updates
+  - Same input as `/convert`
+  - Returns Server-Sent Events with progress updates
+  - Event format: `{"status": "processing|complete|error", "message": "..."}`
+  - Provides detailed progress messages during conversion
+  - Status values:
+    - `processing`: Conversion is in progress, with detailed step information
+    - `complete`: Conversion finished successfully, MusicXML data follows
+    - `error`: Conversion failed, with error details in message
 - `GET /health`: Health check endpoint
+
+Example using the streaming endpoint with curl:
+```bash
+curl -N -X POST -F "file=@your-sheet-music.pdf" \
+     http://localhost:8000/convert/stream
+```
+
+Example using the streaming endpoint with JavaScript:
+```javascript
+const form = new FormData();
+form.append('file', yourFile);
+
+const evtSource = new EventSource('/convert/stream', {
+    method: 'POST',
+    body: form
+});
+
+evtSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(`Status: ${data.status}, Message: ${data.message}`);
+    
+    if (data.status === 'complete') {
+        // Handle successful completion
+        const musicXmlData = data.data;  // The MusicXML content
+        evtSource.close();
+    } else if (data.status === 'error') {
+        // Handle error
+        console.error(data.message);
+        evtSource.close();
+    } else {
+        // Update progress
+        updateProgressUI(data.message);
+    }
+};
+
+evtSource.onerror = (error) => {
+    console.error('SSE Error:', error);
+    evtSource.close();
+};
+```
+
+Example progress messages you might receive:
+```json
+{"status": "processing", "message": "Converting PDF to TIFF..."}
+{"status": "processing", "message": "Running OMR analysis..."}
+{"status": "processing", "message": "Extracting musical elements..."}
+{"status": "processing", "message": "Generating MusicXML..."}
+{"status": "complete", "message": "Conversion complete", "data": "<musicxml>..."}
+```
+
+## Concurrency and Resource Management
+
+The API is designed to handle multiple concurrent requests safely:
+
+- Each conversion request gets its own isolated workspace
+- Workspaces are automatically cleaned up after processing
+- File size limits prevent resource exhaustion
+- Built-in request queuing prevents server overload
+- Progress updates via SSE keep clients informed during long conversions
+
+For optimal performance:
+- Keep files under the size limit (10MB by default)
+- Monitor progress using the streaming endpoint for large files
+- Consider implementing client-side retry logic for busy periods
 
 API documentation is available at:
 - Swagger UI: http://localhost:8000/docs
